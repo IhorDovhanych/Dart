@@ -1,23 +1,31 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:uniscan/firebase_options.dart';
+import 'package:uniscan/pages/camera_page.dart';
 import 'package:uniscan/pages/home_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  runApp(const MyApp());
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  MyApp({super.key});
 
+  final PageController _pageController = PageController();
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(fontFamily: 'NAMU'),
-      home: const HomePage(),
-    );
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData(fontFamily: 'NAMU'),
+        home: PageView(
+          physics: const BouncingScrollPhysics(),
+          controller: _pageController,
+          children: List.unmodifiable([
+            const HomePage(),
+            CameraPage(pageController: _pageController)
+          ]),
+        ));
   }
 }

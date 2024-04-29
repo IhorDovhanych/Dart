@@ -18,7 +18,30 @@ class QrCodeService {
 //* READ/GET
   Stream<QuerySnapshot> getQrCodesStream() {
     final qrCodesStream =
-        qrCodes.orderBy('createdAt', descending: true).snapshots();
+        qrCodes.orderBy('updatedAt', descending: true).snapshots();
     return qrCodesStream;
+  }
+
+  Future<Map<String, dynamic>>? getQrCodeById(String docID) async {
+  try {
+    DocumentSnapshot doc = await qrCodes.doc(docID).get();
+    return doc.data() as Map<String, dynamic>;
+  } catch (e) {
+    throw Exception("Error getting document: $e");
+  }
+}
+//* UPDATE
+
+  Future<void> updateQrCode(String docID, QrCode newQrCode){
+    return qrCodes.doc(docID).update({
+      'name': newQrCode.name,
+      'url': newQrCode.url,
+      'updatedAt': DateTime.now()
+    });
+  }
+//* DELETE
+
+  Future<void> deleteQrCode(String docID){
+    return qrCodes.doc(docID).delete();
   }
 }

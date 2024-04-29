@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:figma_squircle/figma_squircle.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:uniscan/models/qr_code.dart';
@@ -17,19 +18,32 @@ class _HomePageState extends State<HomePage> {
   final TextEditingController nameTextController = TextEditingController();
   final TextEditingController urlTextController = TextEditingController();
 
-  void openQrCodeBox() {
-    nameTextController.clear();
-    urlTextController.clear();
+  void openQrCodeBox({String? docID}) async {
+    if (docID == null) {
+      nameTextController.clear();
+      urlTextController.clear();
+    } else {
+      dynamic qrCode = await qrCodeService.getQrCodeById(docID);
+      nameTextController.text = qrCode['name'];
+      urlTextController.text = qrCode['url'];
+    }
+    // ignore: use_build_context_synchronously
     showDialog(
         context: context,
         builder: (context) => AlertDialog(
               backgroundColor: Colors.white,
               content: Column(
                 children: [
-                  const Text(
-                    'Add qr code',
-                    style: TextStyle(fontSize: 20),
-                  ),
+                  if (docID == null)
+                    const Text(
+                      'Add qr code',
+                      style: TextStyle(fontSize: 20),
+                    )
+                  else
+                    const Text(
+                      'Edit qr code',
+                      style: TextStyle(fontSize: 20),
+                    ),
                   TextField(
                     controller: nameTextController,
                     decoration: const InputDecoration(
@@ -44,26 +58,38 @@ class _HomePageState extends State<HomePage> {
               ),
               actions: [
                 ElevatedButton(
-                    onPressed: () {
-                      try {
-                        QrCode qrCode = QrCode(
-                            name: nameTextController.text,
-                            url: urlTextController.text);
+                  onPressed: () {
+                    try {
+                      QrCode qrCode = QrCode(
+                          name: nameTextController.text,
+                          url: urlTextController.text);
+                      if (docID == null) {
                         qrCodeService.addQrCode(qrCode);
-                        Navigator.pop(context);
-                      } catch (err) {
-                        showDialog(
-                            context: context,
-                            builder: (context) => AlertDialog(
-                                  content: Text(err.toString()),
-                                ));
-                        urlTextController.clear();
+                      } else {
+                        qrCodeService.updateQrCode(docID, qrCode);
                       }
-                    },
-                    child: const Text(
-                      'Add',
-                      style: TextStyle(color: Colors.black),
-                    ))
+                      Navigator.pop(context);
+                    } catch (err) {
+                      showDialog(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                                content: Text(err.toString()),
+                              ));
+                      urlTextController.clear();
+                    }
+                  },
+                  child: docID == null
+                      ? const Text(
+                          'Add',
+                          style: TextStyle(color: Colors.black),
+                        )
+                      : const Text(
+                          'Update',
+                          style: TextStyle(
+                              color:
+                                  Colors.black), // Customize color for update
+                        ),
+                )
               ],
             ));
   }
@@ -118,22 +144,86 @@ class _HomePageState extends State<HomePage> {
                       document.data() as Map<String, dynamic>;
                   String name = data['name'];
                   String url = data['url'];
-                  return ListBody(
+                  return ListView(
+                    shrinkWrap: true,
                     children: [
-                      Row(
-                        children: [
-                          Text("Name: $name "),
-                          InkWell(
-                            onTap: () => launchUrl(Uri.parse(url)),
-                            child: Text("Url: $url "),
-                          )
-                        ],
+                      FractionallySizedBox(
+                        widthFactor: 0.8,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 15, horizontal: 30),
+                          margin: const EdgeInsets.only(top: 20.0),
+                          decoration: ShapeDecoration(
+                              shape: SmoothRectangleBorder(
+                                  borderRadius: SmoothBorderRadius(
+                                      cornerRadius: 15, cornerSmoothing: 0.6)),
+                              color: const Color.fromARGB(255, 200, 212, 255)),
+                          child: Column(
+                            children: [
+                              Row(
+                                children: [
+                                  Text(name,
+                                      style: const TextStyle(fontSize: 30),
+                                      overflow: TextOverflow.ellipsis),
+                                  Flexible(
+                                    child: Container(
+                                      width: MediaQuery.of(context).size.width,
+                                      height: 40,
+                                      alignment: Alignment.centerRight,
+                                      decoration: const BoxDecoration(
+                                        color: Colors.transparent,
+                                      ),
+                                      child: Row(
+                                        mainAxisAlignment: MainAxisAlignment.end,
+                                        children: [
+                                          IconButton(
+                                            onPressed: () => qrCodeService
+                                                .deleteQrCode(docID),
+                                            icon: SvgPicture.asset(
+                                              'assets/icons/delete.svg',
+                                              // ignore: deprecated_member_use
+                                              color: Colors.black,
+                                              width: 30,
+                                            ),
+                                          ),
+                                          IconButton(
+                                            onPressed: () =>
+                                                openQrCodeBox(docID: docID),
+                                            icon: SvgPicture.asset(
+                                              'assets/icons/edit.svg',
+                                              // ignore: deprecated_member_use
+                                              color: Colors.black,
+                                              width: 30,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Row(
+                                children: [
+                                  Flexible(
+                                      child: InkWell(
+                                    onTap: () => launchUrl(Uri.parse(url)),
+                                    child: Text("Url: $url ",
+                                        softWrap: false,
+                                        overflow: TextOverflow.ellipsis),
+                                  ))
+                                ],
+                              )
+                            ],
+                          ),
+                        ),
                       )
                     ],
                   );
                 });
           } else {
-            return CircularProgressIndicator(); // Placeholder for loading indicator
+            return Container(
+              alignment: Alignment.center,
+              child: const CircularProgressIndicator()); // Placeholder for loading indicator
           }
         },
       ),
