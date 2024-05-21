@@ -1,8 +1,8 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:uniscan/firebase_options.dart';
-import 'package:uniscan/pages/camera_page.dart';
-import 'package:uniscan/pages/home_page.dart';
+import 'package:Uniscan/firebase_options.dart';
+import 'package:Uniscan/pages/camera_page.dart';
+import 'package:Uniscan/pages/home_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,7 +23,7 @@ class MyApp extends StatelessWidget {
           physics: const BouncingScrollPhysics(),
           controller: _pageController,
           children: List.unmodifiable([
-            const HomePage(),
+            const HomePage(barcode: '',),
             CameraPage(pageController: _pageController)
           ]),
         ));
